@@ -27,53 +27,26 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Changes from Qualcomm Innovation Center are provided under the following license:
- *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
- */
+#ifndef __VMMEM_H__
+#define __VMMEM_H__
 
-#ifndef __GR_DMA_MGR_H__
-#define __GR_DMA_MGR_H__
-
-#include <BufferAllocator/BufferAllocator.h>
+#include <stdlib.h>
 #include <string>
 #include <vector>
 
-#include "gr_alloc_interface.h"
-#include "vmmem.h"
+#define VMMEM_READ   4
+#define VMMEM_WRITE  2
+#define VMMEM_EXEC   1
 
-#define FD_INIT -1
+using VmPerm = std::vector<std::pair<int, unsigned int>>;
+using VmHandle = int;
 
-namespace gralloc {
-
-class DmaManager : public AllocInterface {
+class VmMem {
  public:
-  ~DmaManager() { Deinit(); }
-  virtual int AllocBuffer(AllocData *data);
-  virtual int FreeBuffer(void *base, unsigned int size, unsigned int offset, int fd,
-                         int ion_handle);
-  virtual int MapBuffer(void **base, unsigned int size, unsigned int offset, int fd);
-  virtual int ImportBuffer(int fd);
-  virtual int CleanBuffer(void *base, unsigned int size, unsigned int offset, int handle, int op,
-                          int fd);
-  virtual int SecureMemPerms(AllocData *data);
-  virtual void GetHeapInfo(uint64_t usage, bool sensor_flag, bool use_uncached, std::string *heap_name,
-                           std::vector<std::string> *vm_names, unsigned int *alloc_type,
-                           unsigned int *flags, unsigned int *alloc_size);
-
-  static DmaManager *GetInstance();
-
- private:
-  DmaManager() {}
-  int UnmapBuffer(void *base, unsigned int size, unsigned int offset);
-  void Deinit();
-
-  int dma_dev_fd_ = FD_INIT;
-  BufferAllocator buffer_allocator_;
-  static DmaManager *dma_manager_;
+  virtual ~VmMem() = 0;
+  static std::unique_ptr<VmMem> CreateVmMem();
+  virtual int FindVmByName(std::basic_string<char> vm_name);
+  virtual int LendDmabuf(int fd, std::vector<std::pair<int, unsigned int>> vm_perms);
 };
 
-}  // namespace gralloc
-
-#endif  // __GR_DMA_MGR_H__
+#endif  // __VMMEM_H__
