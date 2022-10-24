@@ -8,6 +8,7 @@ soong_config_module_type {
         "llvmsa",
         "gralloc4",
         "gralloc_handle_has_reserved_size",
+        "gralloc_handle_has_custom_content_md_reserved_size",
     ],
     properties: [
         "cflags",
@@ -45,8 +46,17 @@ qtidisplay_cc_defaults {
         gralloc4: {
             cflags: ["-DTARGET_USES_GRALLOC4"],
         },
+    },
+}
+
+qtidisplay_cc_defaults {
+    name: "qtidisplay_gralloc_defaults",
+    soong_config_variables: {
         gralloc_handle_has_reserved_size : {
             cflags: ["-DGRALLOC_HANDLE_HAS_RESERVED_SIZE"],
+        },
+        gralloc_handle_has_custom_content_md_reserved_size : {
+            cflags: ["-DGRALLOC_HANDLE_HAS_CUSTOM_CONTENT_MD_RESERVED_SIZE"],
         },
     },
 }
