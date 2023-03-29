@@ -151,13 +151,9 @@ DisplayError DisplayBuiltIn::Init() {
 
   current_refresh_rate_ = hw_panel_info_.max_fps;
 
-  int value = 0;
-  Debug::Get()->GetProperty(ENABLE_HISTOGRAM_INTR, &value);
-  if (value == 1) {
-    initColorSamplingState();
-  }
+  initColorSamplingState();
 
-  value = 0;
+  int value = 0;
   Debug::Get()->GetProperty(DEFER_FPS_FRAME_COUNT, &value);
   deferred_config_.frame_count = (value > 0) ? UINT32(value) : 0;
 
@@ -1122,7 +1118,7 @@ DisplayError DisplayBuiltIn::SetDynamicDSIClock(uint64_t bit_clk_rate) {
   lock_guard<recursive_mutex> obj(recursive_mutex_);
   if (!active_) {
     DLOGW("Invalid display state = %d. Panel must be on.", state_);
-    return kErrorNotSupported;
+    return kErrorNone;
   }
 
   if (!hw_panel_info_.dyn_bitclk_support) {
@@ -1138,6 +1134,8 @@ DisplayError DisplayBuiltIn::SetDynamicDSIClock(uint64_t bit_clk_rate) {
     return kErrorNone;
   }
 
+  needs_validate_ = true;
+  DLOGV("Setting new dynamic bit clk value: %" PRIu64, bit_clk_rate);
   return hw_intf_->SetDynamicDSIClock(bit_clk_rate);
 }
 

@@ -4,22 +4,20 @@ endif
 
 # Display product definitions
 PRODUCT_PACKAGES += \
-    android.hardware.graphics.mapper@3.0-impl-qti-display \
     android.hardware.graphics.mapper@4.0-impl-qti-display \
     vendor.qti.hardware.display.allocator-service \
     vendor.qti.hardware.display.composer-service \
-    android.hardware.memtrack@1.0-impl \
-    android.hardware.memtrack@1.0-service \
     gralloc.$(TARGET_BOARD_PLATFORM) \
     lights.$(TARGET_BOARD_PLATFORM) \
     hwcomposer.$(TARGET_BOARD_PLATFORM) \
-    memtrack.$(TARGET_BOARD_PLATFORM) \
     libsdmcore \
     libsdmutils \
     libqdMetaData \
+    libqdMetaData.system \
+    libdisplayconfig \
+    libgralloc.qti \
+    libdisplayconfig.qti \
     libdisplayconfig.vendor \
-    vendor.qti.hardware.display.mapper@2.0.vendor \
-    vendor.qti.hardware.display.mapper@3.0.vendor \
     vendor.qti.hardware.display.mapper@4.0.vendor \
     init.qti.display_boot.sh \
     init.qti.display_boot.rc \
@@ -71,9 +69,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.sf.color_mode=9 \
     debug.sf.hw=0 \
     debug.egl.hw=0 \
+    debug.sf.enable_hwc_vds=0 \
     debug.sf.latch_unsignaled=1 \
     debug.sf.high_fps_late_app_phase_offset_ns=1000000 \
     debug.mdpcomp.logs=0 \
+    vendor.display.vds_allow_hwc=1 \
     vendor.gralloc.disable_ubwc=0 \
     vendor.display.disable_scaler=0 \
     vendor.display.disable_excl_rect=0 \
@@ -109,7 +109,6 @@ endif
 ifeq ($(TARGET_BOARD_PLATFORM),monaco)
 PRODUCT_PROPERTY_OVERRIDES += \
     vendor.display.disable_layer_stitch=1
-PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.max_frame_buffer_acquired_buffers=3
 endif
 
 ifeq ($(TARGET_BOARD_PLATFORM),kona)
@@ -147,6 +146,8 @@ PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.wcg_composition_dataspa
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.protected_contents=true
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.set_touch_timer_ms=200
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.force_hwc_copy_for_virtual_displays=true
+PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.max_frame_buffer_acquired_buffers=3
+PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.max_virtual_display_dimension=4096
 
 ifneq (,$(filter userdebug eng, $(TARGET_BUILD_VARIANT)))
 # Recovery is enabled, logging is enabled
@@ -160,17 +161,48 @@ endif
 
 # Enable power async mode
 PRODUCT_PROPERTY_OVERRIDES +=  vendor.display.enable_async_powermode=1
+# Soong Namespace
+SOONG_CONFIG_NAMESPACES += qtidisplay
+# Soong Keys
+SOONG_CONFIG_qtidisplay := drmpp headless llvmsa gralloc4 displayconfig_enabled default var1 var2 var3
+
+# Soong Values
+SOONG_CONFIG_qtidisplay_drmpp := true
+SOONG_CONFIG_qtidisplay_headless := false
+SOONG_CONFIG_qtidisplay_llvmsa := false
+SOONG_CONFIG_qtidisplay_gralloc4 := true
+
+SOONG_CONFIG_qtidisplay_displayconfig_enabled := false
+SOONG_CONFIG_qtidisplay_default := true
+SOONG_CONFIG_qtidisplay_var1 := false
+SOONG_CONFIG_qtidisplay_var2 := false
+SOONG_CONFIG_qtidisplay_var3 := false
+
+ifeq ($(call is-vendor-board-platform,QCOM),true)
+    SOONG_CONFIG_qtidisplay_displayconfig_enabled := true
+endif
+
+# Techpack values
 
 QMAA_ENABLED_HAL_MODULES += display
 ifeq ($(TARGET_USES_QMAA),true)
-ifeq ($(TARGET_USES_QMAA_OVERRIDE_DISPLAY),true)
-PRODUCT_PROPERTY_OVERRIDES += \
-    vendor.display.enable_null_display=0
-else
-TARGET_IS_HEADLESS := true
-PRODUCT_PROPERTY_OVERRIDES += \
-    vendor.display.enable_null_display=1
+    ifneq ($(TARGET_USES_QMAA_OVERRIDE_DISPLAY),true)
+        #QMAA Mode is enabled
+        TARGET_IS_HEADLESS := true
+    endif
 endif
+
+ifeq ($(TARGET_IS_HEADLESS), true)
+    SOONG_CONFIG_qtidisplay_headless := true
+    PRODUCT_PROPERTY_OVERRIDES += \
+        vendor.display.enable_null_display=1
+else
+    PRODUCT_PROPERTY_OVERRIDES += \
+            vendor.display.enable_null_display=0
+    #Modules that shouldn't be enabled in QMAA go here
+    PRODUCT_PACKAGES += libdrmutils
+    PRODUCT_PACKAGES += libsdedrm
+    PRODUCT_PACKAGES += libgpu_tonemapper
 endif
 
 # Properties using default value:

@@ -864,8 +864,8 @@ void HWCSession::HandlePendingRefresh() {
   for (size_t i = 0; i < pending_refresh_.size(); i++) {
     if (pending_refresh_.test(i)) {
       callbacks_.Refresh(i);
+      break;
     }
-    break;
   }
 
   pending_refresh_.reset();
@@ -3005,7 +3005,7 @@ void HWCSession::DestroyPluggableDisplay(DisplayMapInfo *map_info) {
 
   SCOPE_LOCK(system_locker_);
   {
-    SEQUENCE_CANCEL_SCOPE_LOCK(locker_[client_id]);
+    SEQUENCE_WAIT_SCOPE_LOCK(locker_[client_id]);
     auto &hwc_display = hwc_display_[client_id];
     if (!hwc_display) {
       return;
