@@ -39,7 +39,7 @@ PRODUCT_PACKAGES += \
     modetest \
     libmemutils
 
-DISPLAY_HAL_DIR := hardware/qcom-caf/sm8350/display
+DISPLAY_HAL_DIR := hardware/qcom-caf/holi/display
 
 ifneq ($(TARGET_HAS_LOW_RAM),true)
 #QDCM calibration xml file for 2k panel
